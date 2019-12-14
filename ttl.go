@@ -19,7 +19,7 @@ type entry struct {
     ttl      int64
 }
 
-type timeToLive struct {
+type TimeToLive struct {
     ttl   int64
     shard uint32
     mxs   []*sync.Mutex
@@ -29,7 +29,7 @@ type timeToLive struct {
 // 创建一个ttl控制器
 // shard表示分片数量, 它将key做hash取模分配到指定的分片上
 // ttl表示默认ttl
-func New(shard uint32, ttl int64) *timeToLive {
+func New(shard uint32, ttl int64) *TimeToLive {
     if shard < 1 {
         shard = 1
     }
@@ -42,7 +42,7 @@ func New(shard uint32, ttl int64) *timeToLive {
         mm[i] = make(map[string]*entry)
     }
 
-    return &timeToLive{
+    return &TimeToLive{
         ttl:   ttl,
         shard: shard,
         mxs:   mxs,
@@ -50,19 +50,19 @@ func New(shard uint32, ttl int64) *timeToLive {
     }
 }
 
-func (m *timeToLive) getMM(key string) (*sync.Mutex, map[string]*entry) {
+func (m *TimeToLive) getMM(key string) (*sync.Mutex, map[string]*entry) {
     hash := crc32.ChecksumIEEE([]byte(key))
     i := hash % m.shard
     return m.mxs[i], m.mm[i]
 }
 
 // 使用默认TTL添加一个key, 如果key已存在会刷新ttl
-func (m *timeToLive) AddDefault(key string) {
+func (m *TimeToLive) AddDefault(key string) {
     m.Add(key, m.ttl)
 }
 
 // 添加key, 如果key已存在会刷新ttl
-func (m *timeToLive) Add(key string, ttl int64) {
+func (m *TimeToLive) Add(key string, ttl int64) {
     mx, entrys := m.getMM(key)
     mx.Lock()
 
@@ -82,7 +82,7 @@ func (m *timeToLive) Add(key string, ttl int64) {
 }
 
 // 获取
-func (m *timeToLive) Get(key string) bool {
+func (m *TimeToLive) Get(key string) bool {
     mx, entrys := m.getMM(key)
     mx.Lock()
 
@@ -97,12 +97,12 @@ func (m *timeToLive) Get(key string) bool {
 }
 
 // 获取并刷新TTL
-func (m *timeToLive) GetAndRefresh(key string) bool {
+func (m *TimeToLive) GetAndRefresh(key string) bool {
     return m.GetAndSetTTL(key, 0)
 }
 
 // 获取并设置TTL
-func (m *timeToLive) GetAndSetTTL(key string, ttl int64) bool {
+func (m *TimeToLive) GetAndSetTTL(key string, ttl int64) bool {
     mx, entrys := m.getMM(key)
     mx.Lock()
 
